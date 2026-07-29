@@ -1,0 +1,134 @@
+import datetime
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+from fastapi import status
+
+from app.main import TASK_STORE, app
+
+@pytest.fixture(autouse=True)
+def clear_task_store() -> None:
+    TASK_STORE.clear()
+
+@pytest.mark.anyio
+async def test_list_tasks_empty() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        response = await client.get('/api/tasks')
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == []
+
+@pytest.mark.anyio
+async def test_create_task_with_due_date_and_tags() -> None:
+    payload = {
+        'title': 'Track release',
+        'description': 'Add due date and tags to the task',
+        'status': 'TODO',
+        'priority': 'HIGH',
+        'assignee': 'Dana',
+        'due_date': datetime.date.today().isoformat(),
+        'tags': ['release', 'frontend'],
+    }
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        response = await client.post('/api/tasks', json=payload)
+    assert response.status_code == status.HTTP_201_CREATED
+    body = response.json()
+    assert body['title'] == payload['title']
+    assert body['due_date'] == payload['due_date']
+    assert body['tags'] == payload['tags']
+    assert body['is_overdue'] is False
+
+@pytest.mark.anyio
+async def test_overdue_filter_returns_only_overdue_tasks() -> None:
+    today = datetime.date.today()
+    overdue_payload = {
+        'title': 'Old task',
+        'description': 'This task should be overdue',
+        'status': 'TODO',
+        'priority': 'LOW',
+        'due_date': (today - datetime.timedelta(days=1)).isoformat(),
+        'tags': ['urgent'],
+    }
+    future_payload = {
+        'title': 'Future task',
+        'description': 'Not overdue yet',
+        'status': 'TODO',
+        'priority': 'MEDIUM',
+        'due_date': (today + datetime.timedelta(days=5)).isoformat(),
+        'tags': ['planning'],
+    }
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        await client.post('/api/tasks', json=overdue_payload)
+        await client.post('/api/tasks', json=future_payload)
+        overdue_response = await client.get('/api/tasks?overdue=true')
+
+    assert overdue_response.status_code == status.HTTP_200_OK
+    tasks = overdue_response.json()
+    assert len(tasks) == 1
+    assert tasks[0]['title'] == overdue_payload['title']
+    assert tasks[0]['is_overdue'] is True
+
+@pytest.mark.anyio
+async def test_tag_filter_matches_task_tags() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        await client.post('/api/tasks', json={
+            'title': 'Backend bug',
+            'description': 'Fix API error',
+            'status': 'TODO',
+            'priority': 'MEDIUM',
+            'tags': ['backend', 'bug'],
+        })
+        await client.post('/api/tasks', json={
+            'title': 'UI polish',
+            'description': 'Button styles',
+            'status': 'TODO',
+            'priority': 'LOW',
+            'tags': ['frontend'],
+        })
+        filtered = await client.get('/api/tasks?tag=backend')
+
+    assert filtered.status_code == status.HTTP_200_OK
+    tasks = filtered.json()
+    assert len(tasks) == 1
+    assert tasks[0]['title'] == 'Backend bug'
+
+@pytest.mark.anyio
+async def test_update_task() -> None:
+    initial_payload = {
+        'title': 'Update demo',
+        'description': 'Verify task update works',
+        'status': 'TODO',
+        'priority': 'MEDIUM',
+        'assignee': 'Charlie',
+    }
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        create_response = await client.post('/api/tasks', json=initial_payload)
+        task_id = create_response.json()['id']
+        update_payload = {
+            'status': 'IN_PROGRESS',
+            'assignee': 'Dana',
+            'tags': ['review'],
+        }
+        update_response = await client.patch(f'/api/tasks/{task_id}', json=update_payload)
+
+    assert update_response.status_code == status.HTTP_200_OK
+    body = update_response.json()
+    assert body['id'] == task_id
+    assert body['title'] == initial_payload['title']
+    assert body['status'] == 'IN_PROGRESS'
+    assert body['assignee'] == 'Dana'
+    assert body['tags'] == ['review']
+
+@pytest.mark.anyio
+async def test_get_task_not_found() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        response = await client.get('/api/tasks/nonexistent')
+    assert response.status_code == status.HTTP_404_NOT_FOUND
