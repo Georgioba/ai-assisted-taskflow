@@ -15,7 +15,7 @@
 ## Feature B — Tags / labels
 
 1. As a user, I want to add tags to tasks via the create/edit form using comma-separated input.
-   - Acceptance criteria: Tags are normalized (trimmed, lower/upper preserved), empty tag entries are removed, maximum 5 tags, maximum 20 characters per tag.
+   - Acceptance criteria: Tags are trimmed, empty tag entries are rejected with 422, a maximum of 5 tags is allowed, and each tag is limited to 20 characters.
    - AI assumption corrected: AI proposed unlimited tags; I constrained to 5 tags to keep the UI simple.
 
 2. As a user, I want to see tag chips on task cards.

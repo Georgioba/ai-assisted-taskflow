@@ -1,11 +1,11 @@
 # Reflection
 
-I used AI (Copilot-style assistant) to sketch and implement two small, end-to-end features: due dates with overdue detection, and tags/labels with filtering. The AI helped me generate code snippets for models, validators, frontend DOM updates, and pytest cases; this sped up iteration and suggested useful test cases.
+I used ChatGPT/Codex as an AI coding assistant for planning, implementation suggestions, test design, debugging, and documentation. I used GitHub to keep the source and workflow visible, and pytest to decide whether an AI-generated change was acceptable. The two selected features were due dates with overdue filtering and tags with tag filtering. Both features required backend models and validation, API behavior, frontend controls, card display, and tests.
 
-One moment AI helped: when I asked for tests for overdue detection, it suggested an `AsyncClient`-based structure which I adapted to the project's `ASGITransport` setup — that saved time on test scaffolding.
+The AI was most helpful when it proposed an `AsyncClient` and `ASGITransport` test structure for the FastAPI application. That gave me a useful starting point for testing create, update, and filter behavior without starting a separate server. I did not accept the snippets blindly: I adapted them to the existing in-memory store, added an automatic reset fixture, and checked response bodies as well as status codes.
 
-One moment AI slowed me down: an early AI suggestion computed overdue status purely in the UI, which would have created inconsistent server-client state; I spent time reworking prompts and verifying server-side computation instead of immediately accepting the suggestion.
+The AI also slowed me down. Its first due-date suggestion calculated overdue status only in JavaScript. That looked simple, but it would allow the API and frontend to disagree. I rejected that approach and kept the business rule in the backend. I later improved it so overdue values are refreshed when tasks are listed, preventing a future-dated task from remaining incorrectly marked after the date passes.
 
-One place my review changed the result: AI proposed allowing unlimited tags; I constrained the design to 5 tags and 20 chars each to keep the UI and tests simple.
+My review changed the tags result significantly. The first suggestion allowed unlimited tags and silently removed empty values. I limited tasks to five tags, limited each tag to twenty characters, and made empty tag values return 422. I then added tests for invalid tags, tag preservation after unrelated updates, tag filtering, and due-date updates.
 
-Overall, I used an iterative loop: prompt, inspect, run tests, and adjust. The repository shows the final accepted changes and the docs explain the decisions, prompts, and verification evidence.
+I used Break Tests to confirm that important tests were meaningful. When I deliberately changed the tag limit from five to six, the tag-limit test failed. When I reversed the overdue comparison, the overdue test failed. After restoring the correct code, all 12 tests passed. This process showed me that AI can accelerate coding, but I still need to define the contract, inspect every suggestion, test failure paths, and keep ownership of the final decision.
