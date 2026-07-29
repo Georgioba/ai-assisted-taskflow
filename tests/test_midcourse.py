@@ -11,19 +11,17 @@ def clear_task_store() -> None:
     TASK_STORE.clear()
 
 @pytest.mark.anyio
-async def test_tags_skip_empty_entries_and_normalize() -> None:
+async def test_empty_tag_returns_422() -> None:
     payload = {
-        'title': 'Tags normalize',
+        'title': 'Reject empty tag',
         'status': 'TODO',
         'priority': 'LOW',
-        'tags': ['  first  ', '', 'second', None],
+        'tags': ['first', '   ', 'second'],
     }
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url='http://testserver') as client:
         response = await client.post('/api/tasks', json=payload)
-    assert response.status_code == status.HTTP_201_CREATED
-    body = response.json()
-    assert body['tags'] == ['first', 'second']
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 @pytest.mark.anyio
 async def test_too_many_tags_returns_422() -> None:
@@ -85,3 +83,28 @@ async def test_tags_preserved_on_unrelated_patch() -> None:
     assert patch.status_code == status.HTTP_200_OK
     body = patch.json()
     assert body['tags'] == ['persist']
+
+
+@pytest.mark.anyio
+async def test_due_date_can_be_updated() -> None:
+    today = datetime.date.today()
+    payload = {
+        'title': 'Update due date',
+        'status': 'TODO',
+        'priority': 'MEDIUM',
+        'due_date': (today + datetime.timedelta(days=5)).isoformat(),
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        created = await client.post('/api/tasks', json=payload)
+        task_id = created.json()['id']
+        new_due_date = (today - datetime.timedelta(days=1)).isoformat()
+        response = await client.patch(
+            f'/api/tasks/{task_id}',
+            json={'due_date': new_due_date},
+        )
+
+    assert response.status_code == status.HTTP_200_OK
+    body = response.json()
+    assert body['due_date'] == new_due_date
+    assert body['is_overdue'] is True
