@@ -7,7 +7,8 @@ A simple Task Tracker application built with FastAPI, vanilla JavaScript, and Py
 - `app/main.py` — FastAPI backend with CRUD endpoints and static frontend routing
 - `app/models.py` — domain models for task creation and updates
 - `app/static/` — vanilla JS frontend assets
-- `tests/test_main.py` — API tests with pytest
+- `tests/` — baseline and mid-course feature tests with pytest
+- `docs/midcourse/` — required AI-assisted workflow evidence
 - `.github/workflows/ci.yml` — CI pipeline for installs and tests
 - `Dockerfile` — container image for the FastAPI app
 
@@ -44,16 +45,18 @@ Then open `http://127.0.0.1:8000`.
 
 ## Documentation
 
-Additional project documentation is available in the `docs/` directory:
+Required project documentation is available in `docs/midcourse/`:
 
-- `docs/user-stories.md`
-- `docs/mini-adr.md`
-- `docs/prompt-log.md`
-- `docs/verification.md`
-- `docs/reflection.md`
+- `docs/midcourse/user-stories.md`
+- `docs/midcourse/mini-adr.md`
+- `docs/midcourse/prompt-log.md`
+- `docs/midcourse/verification.md`
+- `docs/midcourse/reflection.md`
 
-## Branch workflow
+## Submission branch
 
-1. Create a feature branch: `git checkout -b feature/due-date-tags`
-2. Commit incremental changes.
-3. Push and open a pull request for review.
+The assessed version is on the `mid-course-project` branch.
+
+```powershell
+git switch mid-course-project
+```
