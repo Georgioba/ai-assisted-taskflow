@@ -39,6 +39,13 @@ class Task(BaseModel):
 # In-memory storage for demo purposes
 TASK_STORE: List[Task] = []
 
+
+def compute_overdue(status: TaskStatus, due_date: Optional[date]) -> bool:
+    if due_date is None or status == TaskStatus.DONE:
+        return False
+    return due_date < date.today()
+
+
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend() -> HTMLResponse:
     return HTMLResponse(static_dir.joinpath("index.html").read_text(encoding="utf-8"))
@@ -48,7 +55,14 @@ def list_tasks(
     overdue: Optional[bool] = Query(None),
     tag: Optional[str] = Query(None, min_length=1),
 ) -> List[Task]:
-    tasks = TASK_STORE
+    for index, task in enumerate(TASK_STORE):
+        current_overdue = compute_overdue(task.status, task.due_date)
+        if task.is_overdue != current_overdue:
+            TASK_STORE[index] = task.model_copy(
+                update={"is_overdue": current_overdue}
+            )
+
+    tasks = list(TASK_STORE)
     if overdue is not None:
         tasks = [task for task in tasks if task.is_overdue == overdue]
     if tag is not None:
@@ -59,11 +73,6 @@ def list_tasks(
             if any(value.lower() == normalized_tag for value in task.tags)
         ]
     return tasks
-
-def compute_overdue(status: TaskStatus, due_date: Optional[date]) -> bool:
-    if due_date is None or status == TaskStatus.DONE:
-        return False
-    return due_date < date.today()
 
 @app.post("/api/tasks", response_model=Task, status_code=201)
 def create_task(task_data: TaskCreate) -> Task:

@@ -1,7 +1,8 @@
+from enum import Enum
 from datetime import date
 from typing import Optional
-from enum import Enum
-from pydantic import BaseModel, Field, validator
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class TaskStatus(str, Enum):
@@ -20,17 +21,17 @@ def normalize_tags(value):
     if value is None:
         return []
     if isinstance(value, str):
-        value = [tag.strip() for tag in value.split(",")]
+        value = value.split(",")
     if not isinstance(value, list):
-        raise TypeError("tags must be a list")
+        raise ValueError("tags must be a list or comma-separated string")
 
     normalized = []
     for tag in value:
-        if tag is None:
-            continue
-        tag_text = str(tag).strip()
+        if not isinstance(tag, str):
+            raise ValueError("each tag must be a non-empty string")
+        tag_text = tag.strip()
         if not tag_text:
-            continue
+            raise ValueError("tags must not contain empty values")
         if len(tag_text) > 20:
             raise ValueError("each tag must be 20 characters or fewer")
         normalized.append(tag_text)
@@ -41,6 +42,8 @@ def normalize_tags(value):
 
 
 class TaskCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     title: str = Field(..., min_length=1, max_length=200)
     description: str = ""
     status: TaskStatus = TaskStatus.TODO
@@ -49,21 +52,23 @@ class TaskCreate(BaseModel):
     due_date: Optional[date] = None
     tags: list[str] = Field(default_factory=list)
 
-    @validator("title")
-    def title_not_blank(cls, v: str) -> str:
-        if v is None or not v.strip():
+    @field_validator("title")
+    @classmethod
+    def title_not_blank(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
             raise ValueError("title must not be empty or whitespace")
-        return v
+        return cleaned
 
-    @validator("tags", pre=True)
-    def clean_tags(cls, v):
-        return normalize_tags(v)
-
-    class Config:
-        extra = "forbid"
+    @field_validator("tags", mode="before")
+    @classmethod
+    def clean_tags(cls, value):
+        return normalize_tags(value)
 
 
 class TaskUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[TaskStatus] = None
@@ -72,21 +77,21 @@ class TaskUpdate(BaseModel):
     due_date: Optional[date] = None
     tags: Optional[list[str]] = None
 
-    @validator("title")
-    def title_strip_and_validate(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return v
-        if not v.strip():
+    @field_validator("title")
+    @classmethod
+    def title_strip_and_validate(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        cleaned = value.strip()
+        if not cleaned:
             raise ValueError("title must not be empty or whitespace")
-        if len(v) > 200:
+        if len(cleaned) > 200:
             raise ValueError("title too long")
-        return v
+        return cleaned
 
-    @validator("tags", pre=True)
-    def clean_tags(cls, v):
-        if v is None:
+    @field_validator("tags", mode="before")
+    @classmethod
+    def clean_tags(cls, value):
+        if value is None:
             return None
-        return normalize_tags(v)
-
-    class Config:
-        extra = "forbid"
+        return normalize_tags(value)
