@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Tracker</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 16px; background: #f5f7fb; color: #111; }
+    header { margin-bottom: 24px; }
+    h1 { margin: 0 0 8px; }
+    .task-form, .task-list, .task-filters { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 12px rgba(15,23,42,.08); }
+    .task-form input, .task-form textarea, .task-form select, .task-filters input { width: 100%; margin-top: 8px; padding: 8px; border: 1px solid #d2d6dc; border-radius: 8px; }
+    .task-card { border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; margin-bottom: 12px; background: #fff; }
+    .task-card .meta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+    .task-card button { margin-right: 8px; }
+    .task-pill { background: #fee2e2; color: #b91c1c; font-size: 0.85rem; padding: 4px 10px; border-radius: 999px; }
+    .task-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .task-chip { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; }
+    .filters-row { display: grid; gap: 12px; }
+    .filters-row label { display: block; }
+    .hidden { display: none; }
+    button { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 10px 16px; cursor: pointer; }
+    button.secondary { background: #94a3b8; }
+    .error { color: #b91c1c; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Task Tracker</h1>
+    <p>Simple FastAPI + Vanilla JS task tracker with due dates and tags.</p>
+  </header>
+
+  <section class="task-form">
+    <h2 id="form-heading">Create Task</h2>
+    <form id="create-task-form">
+      <input type="hidden" id="task-id" />
+      <label>Title<input type="text" id="title" required /></label>
+      <label>Description<textarea id="description"></textarea></label>
+      <label>Status<select id="status"><option value="TODO">TODO</option><option value="IN_PROGRESS">IN_PROGRESS</option><option value="DONE">DONE</option></select></label>
+      <label>Priority<select id="priority"><option value="LOW">LOW</option><option value="MEDIUM" selected>MEDIUM</option><option value="HIGH">HIGH</option></select></label>
+      <label>Assignee<input type="text" id="assignee" /></label>
+      <label>Due date<input type="date" id="due-date" /></label>
+      <label>Tags<input type="text" id="tags" placeholder="Comma-separated tags" /></label>
+      <button type="submit" id="submit-button">Create task</button>
+      <button type="button" id="cancel-button" class="secondary hidden">Cancel</button>
+      <div id="form-error" class="error" role="alert"></div>
+    </form>
+  </section>
+
+  <section class="task-filters" style="margin-top:24px;">
+    <h2>Filters</h2>
+    <div class="filters-row">
+      <label>Show overdue only<input type="checkbox" id="filter-overdue" /></label>
+      <label>Tag filter<input type="text" id="filter-tag" placeholder="Tag name" /></label>
+      <div>
+        <button type="button" id="apply-filters">Apply filters</button>
+        <button type="button" id="clear-filters" class="secondary">Clear filters</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="task-list" style="margin-top:24px;">
+    <h2>Tasks</h2>
+    <div id="tasks"></div>
+  </section>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
