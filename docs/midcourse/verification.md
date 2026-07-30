@@ -12,12 +12,12 @@
 ## Current backend test result
 
 ```
-.................                                                        [100%]
-17 passed in 0.22s
+..................                                                       [100%]
+18 passed in 0.29s
 ```
 
 The final run includes the original tests, the six focused mid-course tests,
-and five facilitator-feedback regression tests. It covers valid creation,
+and six facilitator-feedback/frontend regression tests. It covers valid creation,
 invalid date format, empty tags, too many tags, overdue detection/filtering,
 tag filtering, tag preservation, due-date updates, valid and invalid status
 transitions, explicit-null title rejection, visible card insertion, unrelated
@@ -37,6 +37,7 @@ updates, and 404 behavior.
 | Submit an empty tag through the API | PASS — the server returned 422. |
 | Update `TODO` directly to `DONE` | PASS — the server returned 422 and retained `TODO`. |
 | Update title to explicit null | PASS — the server returned 422 and retained the original title. |
+| Edit a task without changing status | PASS — the PATCH payload omitted status, so unrelated edits were accepted. |
 
 The earlier verification incorrectly claimed that cards were displayed without
 checking the final DOM insertion. Facilitator feedback exposed that gap. The
@@ -58,6 +59,7 @@ result, not only the API response or card construction.
 | `TODO` cannot skip directly to `DONE` | Gap: returned 200 | Corrected to 422; PASS |
 | Explicit null title is rejected | Gap: returned 200 and stored null | Corrected to 422; PASS |
 | API tasks appear in the board | Gap: cards were built but not inserted | `appendChild` restored and DOM-verified; PASS |
+| Unchanged status during a frontend edit | Gap found during module review: frontend sent `TODO` → `TODO`, which the backend correctly rejected | Frontend now omits an unchanged status from PATCH; DOM execution check and regression assertion PASS |
 
 After correcting the empty-tag contract, the model validators were refactored from deprecated Pydantic v1 syntax to Pydantic v2 `field_validator` and `ConfigDict`. The full behavior contract passed afterward with no warnings.
 
