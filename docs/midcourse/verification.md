@@ -4,29 +4,44 @@
 - Before the focused correction/refactor, the full suite completed with `11 passed, 6 warnings in 0.22s`.
 - The warnings were all caused by Pydantic v1-style `@validator` and class-based `Config` usage.
 - Baseline smoke contract: `GET /` returned the frontend, `GET /api/tasks` returned 200, and create/update/delete behavior remained available.
+- Before the facilitator-feedback correction, `12 passed`, but the three
+  reported baseline behaviors were not covered. Reproduction confirmed:
+  `TODO` → `DONE` returned 200, `{"title": null}` returned 200 and stored null,
+  and `renderTasks()` created cards without inserting them into `#tasks`.
 
 ## Current backend test result
 
 ```
-............                                                             [100%]
-12 passed in 0.21s
+.................                                                        [100%]
+17 passed in 0.22s
 ```
 
-The final run includes six baseline/API tests and six focused mid-course tests. It covers valid creation, invalid date format, empty tags, too many tags, overdue detection/filtering, tag filtering, tag preservation, due-date updates, unrelated updates, and 404 behavior.
+The final run includes the original tests, the six focused mid-course tests,
+and five facilitator-feedback regression tests. It covers valid creation,
+invalid date format, empty tags, too many tags, overdue detection/filtering,
+tag filtering, tag preservation, due-date updates, valid and invalid status
+transitions, explicit-null title rejection, visible card insertion, unrelated
+updates, and 404 behavior.
 
-## Manual browser and application checks
+## Frontend and application checks
 
 | Check | Observed result |
 |---|---|
 | Open the app | PASS — frontend returned 200 and the create form, filters, and board were visible. |
-| Create a task with a due date and tags | PASS — response was 201; the card showed its due date and tag chips. |
-| Create a past-due task | PASS — the card showed the Overdue pill. |
-| Apply “Show overdue only” | PASS — only the overdue task remained. |
-| Filter by `urgent` | PASS — only the task containing that tag remained. |
+| Execute the real HTML and JavaScript with one API task | PASS — one `.task-card` was inserted into `#tasks`, and its title was visible. |
+| Create a task with a due date and tags | PASS — response was 201 and the response preserved the due date and tags. |
+| Create a past-due task | PASS — the API returned `is_overdue: true`. |
+| Apply “Show overdue only” | PASS — only the overdue task was returned. |
+| Filter by `urgent` | PASS — only the task containing that tag was returned. |
 | Edit the due date | PASS — the updated date was returned and overdue status was recalculated. |
 | Submit an empty tag through the API | PASS — the server returned 422. |
+| Update `TODO` directly to `DONE` | PASS — the server returned 422 and retained `TODO`. |
+| Update title to explicit null | PASS — the server returned 422 and retained the original title. |
 
-The latest server smoke check also recorded: create overdue task `201`, overdue filter `200`, tag filter `200`, empty tag `422`.
+The earlier verification incorrectly claimed that cards were displayed without
+checking the final DOM insertion. Facilitator feedback exposed that gap. The
+new frontend regression test and DOM execution check now verify the visible
+result, not only the API response or card construction.
 
 ## Behavior contract before and after refactor
 
@@ -40,6 +55,9 @@ The latest server smoke check also recorded: create overdue task `201`, overdue 
 | Overdue filter returns only overdue tasks | PASS | PASS |
 | Tag filter is case-insensitive | PASS | PASS |
 | Empty tag is rejected | Gap: empty values were silently removed | Corrected to 422; PASS |
+| `TODO` cannot skip directly to `DONE` | Gap: returned 200 | Corrected to 422; PASS |
+| Explicit null title is rejected | Gap: returned 200 and stored null | Corrected to 422; PASS |
+| API tasks appear in the board | Gap: cards were built but not inserted | `appendChild` restored and DOM-verified; PASS |
 
 After correcting the empty-tag contract, the model validators were refactored from deprecated Pydantic v1 syntax to Pydantic v2 `field_validator` and `ConfigDict`. The full behavior contract passed afterward with no warnings.
 

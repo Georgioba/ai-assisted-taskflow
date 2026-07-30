@@ -8,4 +8,12 @@ The AI also slowed me down. Its first due-date suggestion calculated overdue sta
 
 My review changed the tags result significantly. The first suggestion allowed unlimited tags and silently removed empty values. I limited tasks to five tags, limited each tag to twenty characters, and made empty tag values return 422. I then added tests for invalid tags, tag preservation after unrelated updates, tag filtering, and due-date updates.
 
-I used Break Tests to confirm that important tests were meaningful. When I deliberately changed the tag limit from five to six, the tag-limit test failed. When I reversed the overdue comparison, the overdue test failed. After restoring the correct code, all 12 tests passed. This process showed me that AI can accelerate coding, but I still need to define the contract, inspect every suggestion, test failure paths, and keep ownership of the final decision.
+Facilitator feedback later exposed three baseline gaps that my first review
+missed: status transitions were not enforced, an explicit null title was
+accepted, and frontend cards were created but never added to the page. I
+reproduced each failure before editing. I then added a small transition rule,
+rejected explicit null titles, restored the missing DOM insertion, and added
+five regression tests. This also corrected my verification evidence: checking
+an API response is not enough to claim that the UI displayed the result.
+
+I used Break Tests to confirm that important tests were meaningful. When I deliberately changed the tag limit from five to six, the tag-limit test failed. When I reversed the overdue comparison, the overdue test failed. After restoring the correct code and applying the feedback fixes, all 17 tests passed. This process showed me that AI can accelerate coding, but I still need to define the contract, inspect every suggestion, test failure paths, verify the visible result, and keep ownership of the final decision.
