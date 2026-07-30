@@ -5,6 +5,7 @@ A simple Task Tracker application built with FastAPI, vanilla JavaScript, and Py
 ## Project structure
 
 - `app/main.py` — FastAPI backend with CRUD endpoints and static frontend routing
+- `app/business_rules.py` — allowed task status transitions
 - `app/models.py` — domain models for task creation and updates
 - `app/static/` — vanilla JS frontend assets
 - `tests/` — baseline and mid-course feature tests with pytest
@@ -31,6 +32,17 @@ Open `http://127.0.0.1:8000` in your browser.
 ```powershell
 pytest
 ```
+
+## Task status workflow
+
+The backend enforces these transitions:
+
+- `TODO` → `IN_PROGRESS`
+- `IN_PROGRESS` → `DONE`
+- `DONE` → `IN_PROGRESS` (reopen)
+
+Skipping directly from `TODO` to `DONE` and updating to the same status return
+HTTP 422.
 
 ## Docker
 
