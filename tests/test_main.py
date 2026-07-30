@@ -195,6 +195,59 @@ async def test_explicit_null_title_update_returns_422() -> None:
     assert stored.json()['title'] == 'Keep this title'
 
 
+@pytest.mark.anyio
+async def test_explicit_null_status_returns_422_without_corrupting_task() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        created = await client.post('/api/tasks', json={'title': 'Keep valid status'})
+        task_id = created.json()['id']
+        rejected = await client.patch(
+            f'/api/tasks/{task_id}',
+            json={'status': None},
+        )
+        valid_update = await client.patch(
+            f'/api/tasks/{task_id}',
+            json={'status': 'IN_PROGRESS'},
+        )
+
+    assert rejected.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert valid_update.status_code == status.HTTP_200_OK
+    assert valid_update.json()['status'] == 'IN_PROGRESS'
+
+
+@pytest.mark.parametrize(
+    ('field_name', 'original_value'),
+    [
+        ('description', 'Keep this description'),
+        ('priority', 'HIGH'),
+        ('tags', ['keep']),
+    ],
+)
+@pytest.mark.anyio
+async def test_explicit_null_required_update_fields_return_422(
+    field_name: str,
+    original_value,
+) -> None:
+    payload = {
+        'title': 'Keep required fields valid',
+        'description': 'Keep this description',
+        'priority': 'HIGH',
+        'tags': ['keep'],
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        created = await client.post('/api/tasks', json=payload)
+        task_id = created.json()['id']
+        rejected = await client.patch(
+            f'/api/tasks/{task_id}',
+            json={field_name: None},
+        )
+        stored = await client.get(f'/api/tasks/{task_id}')
+
+    assert rejected.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert stored.json()[field_name] == original_value
+
+
 def test_frontend_render_inserts_cards_into_tasks_container() -> None:
     javascript = (
         Path(__file__).resolve().parents[1]
