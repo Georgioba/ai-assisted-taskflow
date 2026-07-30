@@ -95,7 +95,12 @@ def update_task(task_id: str, update_data: TaskUpdate) -> Task:
         if task.id == task_id:
             if update_data.status is not None:
                 validate_status_transition(task.status, update_data.status)
-            updated = task.model_copy(update=update_data.model_dump(exclude_unset=True))
+            updated = Task.model_validate(
+                {
+                    **task.model_dump(),
+                    **update_data.model_dump(exclude_unset=True),
+                }
+            )
             updated.is_overdue = compute_overdue(updated.status, updated.due_date)
             TASK_STORE[index] = updated
             return updated

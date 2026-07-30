@@ -2,7 +2,7 @@ from enum import Enum
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class TaskStatus(str, Enum):
@@ -77,11 +77,20 @@ class TaskUpdate(BaseModel):
     due_date: Optional[date] = None
     tags: Optional[list[str]] = None
 
+    @model_validator(mode="before")
+    @classmethod
+    def reject_null_for_required_fields(cls, value):
+        if not isinstance(value, dict):
+            return value
+
+        for field_name in ("title", "description", "status", "priority", "tags"):
+            if field_name in value and value[field_name] is None:
+                raise ValueError(f"{field_name} cannot be null")
+        return value
+
     @field_validator("title")
     @classmethod
     def title_strip_and_validate(cls, value: Optional[str]) -> Optional[str]:
-        if value is None:
-            raise ValueError("title cannot be null")
         cleaned = value.strip()
         if not cleaned:
             raise ValueError("title must not be empty or whitespace")
