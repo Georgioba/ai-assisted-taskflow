@@ -19,6 +19,7 @@ const applyFiltersButton = document.getElementById('apply-filters');
 const clearFiltersButton = document.getElementById('clear-filters');
 
 let editingTaskId = null;
+let editingTaskStatus = null;
 
 function buildQueryString() {
   const params = new URLSearchParams();
@@ -100,6 +101,7 @@ function parseTags(value) {
 function setFormMode(task = null) {
   if (task) {
     editingTaskId = task.id;
+    editingTaskStatus = task.status;
     taskIdInput.value = task.id;
     titleInput.value = task.title;
     descriptionInput.value = task.description;
@@ -113,6 +115,7 @@ function setFormMode(task = null) {
     cancelButton.classList.remove('hidden');
   } else {
     editingTaskId = null;
+    editingTaskStatus = null;
     taskIdInput.value = '';
     form.reset();
     formHeading.textContent = 'Create Task';
@@ -134,6 +137,10 @@ async function submitTask(event) {
     due_date: dueDateInput.value || undefined,
     tags: parseTags(tagsInput.value),
   };
+
+  if (editingTaskId && statusInput.value === editingTaskStatus) {
+    delete payload.status;
+  }
 
   const url = editingTaskId ? `${apiBase}/${editingTaskId}` : apiBase;
   const method = editingTaskId ? 'PATCH' : 'POST';
