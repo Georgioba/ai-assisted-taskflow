@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from app.business_rules import validate_status_transition
 from app.models import TaskCreate, TaskUpdate, TaskPriority, TaskStatus
 
 app = FastAPI(title="Task Tracker API")
@@ -92,6 +93,8 @@ def get_task(task_id: str) -> Task:
 def update_task(task_id: str, update_data: TaskUpdate) -> Task:
     for index, task in enumerate(TASK_STORE):
         if task.id == task_id:
+            if update_data.status is not None:
+                validate_status_transition(task.status, update_data.status)
             updated = task.model_copy(update=update_data.model_dump(exclude_unset=True))
             updated.is_overdue = compute_overdue(updated.status, updated.due_date)
             TASK_STORE[index] = updated

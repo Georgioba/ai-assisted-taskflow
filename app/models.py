@@ -81,7 +81,7 @@ class TaskUpdate(BaseModel):
     @classmethod
     def title_strip_and_validate(cls, value: Optional[str]) -> Optional[str]:
         if value is None:
-            return value
+            raise ValueError("title cannot be null")
         cleaned = value.strip()
         if not cleaned:
             raise ValueError("title must not be empty or whitespace")
