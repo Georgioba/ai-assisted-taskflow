@@ -86,6 +86,7 @@ function renderTasks(tasks) {
     deleteButton.addEventListener('click', () => deleteTask(task.id));
 
     card.append(meta, description, dateLine, tagsLine, editButton, deleteButton);
+    tasksNode.appendChild(card);
   });
 }
 
