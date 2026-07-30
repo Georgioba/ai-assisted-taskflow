@@ -12,22 +12,22 @@
 ## Current backend test result
 
 ```
-..................                                                       [100%]
-18 passed in 0.29s
+......................                                                   [100%]
+22 passed in 0.55s
 ```
 
-The final run includes the original tests, the six focused mid-course tests,
-and six facilitator-feedback/frontend regression tests. It covers valid creation,
+The final run includes the 18 previously passing tests plus four explicit-null
+required-field regression cases. It covers valid creation,
 invalid date format, empty tags, too many tags, overdue detection/filtering,
 tag filtering, tag preservation, due-date updates, valid and invalid status
-transitions, explicit-null title rejection, visible card insertion, unrelated
-updates, and 404 behavior.
+transitions, explicit-null required-field rejection, visible card insertion,
+unrelated updates, and 404 behavior.
 
 ## Frontend and application checks
 
 | Check | Observed result |
 |---|---|
-| Open the app | PASS — frontend returned 200 and the create form, filters, and board were visible. |
+| Open the app | PASS — frontend returned 200 and the create form, filters, and task list were visible. |
 | Execute the real HTML and JavaScript with one API task | PASS — one `.task-card` was inserted into `#tasks`, and its title was visible. |
 | Create a task with a due date and tags | PASS — response was 201 and the response preserved the due date and tags. |
 | Create a past-due task | PASS — the API returned `is_overdue: true`. |
@@ -58,7 +58,8 @@ result, not only the API response or card construction.
 | Empty tag is rejected | Gap: empty values were silently removed | Corrected to 422; PASS |
 | `TODO` cannot skip directly to `DONE` | Gap: returned 200 | Corrected to 422; PASS |
 | Explicit null title is rejected | Gap: returned 200 and stored null | Corrected to 422; PASS |
-| API tasks appear in the board | Gap: cards were built but not inserted | `appendChild` restored and DOM-verified; PASS |
+| API tasks appear in the task list | Gap: cards were built but not inserted | `appendChild` restored and DOM-verified; PASS |
+| Explicit null required update fields | Gap found during comparison: `status: null` returned 200 and corrupted stored state | Required fields now reject explicit null with 422; stored tasks remain valid; regression tests PASS |
 | Unchanged status during a frontend edit | Gap found during module review: frontend sent `TODO` → `TODO`, which the backend correctly rejected | Frontend now omits an unchanged status from PATCH; DOM execution check and regression assertion PASS |
 
 After correcting the empty-tag contract, the model validators were refactored from deprecated Pydantic v1 syntax to Pydantic v2 `field_validator` and `ConfigDict`. The full behavior contract passed afterward with no warnings.

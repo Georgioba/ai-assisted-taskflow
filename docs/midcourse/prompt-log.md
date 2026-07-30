@@ -50,7 +50,7 @@
 
 ### Prompt 3: frontend integration
 
-**Prompt:** “Add a comma-separated tag field to the existing create/edit form, render safe tag chips on cards, and add a tag filter without removing the Kanban columns or empty states.”
+**Prompt:** “Add a comma-separated tag field to the existing create/edit form, render safe tag chips on cards, and add a tag filter without removing the existing task list or empty state.”
 
 **AI response summary:** The AI generated DOM code, filter query construction, and chip styles.
 
