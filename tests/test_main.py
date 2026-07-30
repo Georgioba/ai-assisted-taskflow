@@ -1,4 +1,5 @@
 import datetime
+from pathlib import Path
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -125,6 +126,84 @@ async def test_update_task() -> None:
     assert body['status'] == 'IN_PROGRESS'
     assert body['assignee'] == 'Dana'
     assert body['tags'] == ['review']
+
+
+@pytest.mark.anyio
+async def test_valid_status_transition_chain_returns_200() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        created = await client.post('/api/tasks', json={'title': 'Transition task'})
+        task_id = created.json()['id']
+        in_progress = await client.patch(
+            f'/api/tasks/{task_id}',
+            json={'status': 'IN_PROGRESS'},
+        )
+        done = await client.patch(
+            f'/api/tasks/{task_id}',
+            json={'status': 'DONE'},
+        )
+
+    assert in_progress.status_code == status.HTTP_200_OK
+    assert in_progress.json()['status'] == 'IN_PROGRESS'
+    assert done.status_code == status.HTTP_200_OK
+    assert done.json()['status'] == 'DONE'
+
+
+@pytest.mark.anyio
+async def test_todo_to_done_transition_returns_422() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        created = await client.post('/api/tasks', json={'title': 'No skipping'})
+        task_id = created.json()['id']
+        response = await client.patch(
+            f'/api/tasks/{task_id}',
+            json={'status': 'DONE'},
+        )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert 'Invalid status transition' in response.json()['detail']
+    assert TASK_STORE[0].status.value == 'TODO'
+
+
+@pytest.mark.anyio
+async def test_same_status_transition_returns_422() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        created = await client.post('/api/tasks', json={'title': 'No no-op status'})
+        task_id = created.json()['id']
+        response = await client.patch(
+            f'/api/tasks/{task_id}',
+            json={'status': 'TODO'},
+        )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.anyio
+async def test_explicit_null_title_update_returns_422() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        created = await client.post('/api/tasks', json={'title': 'Keep this title'})
+        task_id = created.json()['id']
+        response = await client.patch(
+            f'/api/tasks/{task_id}',
+            json={'title': None},
+        )
+        stored = await client.get(f'/api/tasks/{task_id}')
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert stored.json()['title'] == 'Keep this title'
+
+
+def test_frontend_render_inserts_cards_into_tasks_container() -> None:
+    javascript = (
+        Path(__file__).resolve().parents[1]
+        .joinpath('app', 'static', 'app.js')
+        .read_text(encoding='utf-8')
+    )
+
+    assert 'tasksNode.appendChild(card);' in javascript
+
 
 @pytest.mark.anyio
 async def test_get_task_not_found() -> None:
