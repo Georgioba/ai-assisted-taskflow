@@ -205,6 +205,18 @@ def test_frontend_render_inserts_cards_into_tasks_container() -> None:
     assert 'tasksNode.appendChild(card);' in javascript
 
 
+def test_frontend_edit_omits_unchanged_status_from_patch() -> None:
+    javascript = (
+        Path(__file__).resolve().parents[1]
+        .joinpath('app', 'static', 'app.js')
+        .read_text(encoding='utf-8')
+    )
+
+    assert 'editingTaskStatus = task.status;' in javascript
+    assert 'statusInput.value === editingTaskStatus' in javascript
+    assert 'delete payload.status;' in javascript
+
+
 @pytest.mark.anyio
 async def test_get_task_not_found() -> None:
     transport = ASGITransport(app=app)
