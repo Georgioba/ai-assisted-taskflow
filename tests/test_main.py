@@ -19,6 +19,16 @@ async def test_list_tasks_empty() -> None:
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == []
 
+
+@pytest.mark.anyio
+async def test_health_returns_200() -> None:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url='http://testserver') as client:
+        response = await client.get('/health')
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {'status': 'ok'}
+
 @pytest.mark.anyio
 async def test_create_task_with_due_date_and_tags() -> None:
     payload = {
@@ -160,7 +170,7 @@ async def test_todo_to_done_transition_returns_422() -> None:
             json={'status': 'DONE'},
         )
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert 'Invalid status transition' in response.json()['detail']
     assert TASK_STORE[0].status.value == 'TODO'
 
@@ -176,7 +186,7 @@ async def test_same_status_transition_returns_422() -> None:
             json={'status': 'TODO'},
         )
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 @pytest.mark.anyio
@@ -191,7 +201,7 @@ async def test_explicit_null_title_update_returns_422() -> None:
         )
         stored = await client.get(f'/api/tasks/{task_id}')
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert stored.json()['title'] == 'Keep this title'
 
 
@@ -210,7 +220,7 @@ async def test_explicit_null_status_returns_422_without_corrupting_task() -> Non
             json={'status': 'IN_PROGRESS'},
         )
 
-    assert rejected.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert rejected.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert valid_update.status_code == status.HTTP_200_OK
     assert valid_update.json()['status'] == 'IN_PROGRESS'
 
@@ -244,14 +254,14 @@ async def test_explicit_null_required_update_fields_return_422(
         )
         stored = await client.get(f'/api/tasks/{task_id}')
 
-    assert rejected.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert rejected.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert stored.json()[field_name] == original_value
 
 
 def test_frontend_render_inserts_cards_into_tasks_container() -> None:
     javascript = (
         Path(__file__).resolve().parents[1]
-        .joinpath('app', 'static', 'app.js')
+        .joinpath('frontend', 'app.js')
         .read_text(encoding='utf-8')
     )
 
@@ -261,13 +271,24 @@ def test_frontend_render_inserts_cards_into_tasks_container() -> None:
 def test_frontend_edit_omits_unchanged_status_from_patch() -> None:
     javascript = (
         Path(__file__).resolve().parents[1]
-        .joinpath('app', 'static', 'app.js')
+        .joinpath('frontend', 'app.js')
         .read_text(encoding='utf-8')
     )
 
     assert 'editingTaskStatus = task.status;' in javascript
     assert 'statusInput.value === editingTaskStatus' in javascript
     assert 'delete payload.status;' in javascript
+
+
+def test_frontend_uses_text_content_for_task_title() -> None:
+    javascript = (
+        Path(__file__).resolve().parents[1]
+        .joinpath('frontend', 'app.js')
+        .read_text(encoding='utf-8')
+    )
+
+    assert 'title.textContent = task.title;' in javascript
+    assert 'meta.innerHTML' not in javascript
 
 
 @pytest.mark.anyio

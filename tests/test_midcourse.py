@@ -21,7 +21,7 @@ async def test_empty_tag_returns_422() -> None:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url='http://testserver') as client:
         response = await client.post('/api/tasks', json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 @pytest.mark.anyio
 async def test_too_many_tags_returns_422() -> None:
@@ -34,7 +34,7 @@ async def test_too_many_tags_returns_422() -> None:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url='http://testserver') as client:
         response = await client.post('/api/tasks', json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 @pytest.mark.anyio
 async def test_invalid_due_date_format_returns_422() -> None:
@@ -47,7 +47,7 @@ async def test_invalid_due_date_format_returns_422() -> None:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url='http://testserver') as client:
         response = await client.post('/api/tasks', json=payload)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 @pytest.mark.anyio
 async def test_overdue_flag_detected() -> None:
