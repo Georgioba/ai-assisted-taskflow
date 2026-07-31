@@ -23,7 +23,7 @@ No product feature was added. The only runtime changes were the required `/healt
 - Trigger: every push and pull request, including `final-project`.
 - Test command used by CI: `python -m pytest` with Python 3.12 after installing `requirements.txt`.
 - Docker check: a dependent job builds the image, runs it, and requires `/health` to succeed.
-- Latest run link or note: pending the first pushed `final-project` workflow run; replace this line with the green run URL before submission.
+- Latest verified green run: https://github.com/Georgioba/ai-assisted-taskflow/actions/runs/30623605229 (`final-project`, CI #29, 43 seconds).
 - Shortcut check: no `continue-on-error`, no `|| true`, and pytest is not skipped.
 
 ## Docker evidence
@@ -33,7 +33,8 @@ No product feature was added. The only runtime changes were the required `/healt
 - Health check: `curl --fail http://127.0.0.1:8000/health` must return `{"status":"ok"}`.
 - Non-root check: `Dockerfile` creates and switches to the system user `app`.
 - No-baked-secrets check: `.dockerignore` excludes `.env`, `.env.*`, Git data, caches, tests, and docs; the Dockerfile copies only requirements, `app/`, and `frontend/`.
-- Local environment note: Docker was not installed in the coding workspace, so the image verification is enforced by the GitHub Actions Docker smoke job rather than falsely recorded as a local success.
+- Runtime result: the Docker smoke job completed successfully in CI run #29, including image build, container start, and `/health` verification.
+- Local environment note: Docker was not installed in the coding workspace, so local Docker success is not claimed; the same verification is enforced by GitHub Actions.
 
 ## Documentation claim-vs-reality log
 
