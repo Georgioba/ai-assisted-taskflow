@@ -53,14 +53,25 @@ function renderTasks(tasks) {
 
     const meta = document.createElement('div');
     meta.className = 'meta';
-    const overdueLabel = task.is_overdue ? '<span class="task-pill">Overdue</span>' : '';
-    meta.innerHTML = `
-      <strong>${task.title}</strong>
-      <span>${task.status}</span>
-      <span>${task.priority}</span>
-      <span>${task.assignee || 'Unassigned'}</span>
-      ${overdueLabel}
-    `;
+    const title = document.createElement('strong');
+    title.textContent = task.title;
+
+    const status = document.createElement('span');
+    status.textContent = task.status;
+
+    const priority = document.createElement('span');
+    priority.textContent = task.priority;
+
+    const assignee = document.createElement('span');
+    assignee.textContent = task.assignee || 'Unassigned';
+
+    meta.append(title, status, priority, assignee);
+    if (task.is_overdue) {
+      const overdueLabel = document.createElement('span');
+      overdueLabel.className = 'task-pill';
+      overdueLabel.textContent = 'Overdue';
+      meta.appendChild(overdueLabel);
+    }
 
     const description = document.createElement('p');
     description.textContent = task.description;
