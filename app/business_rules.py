@@ -20,7 +20,7 @@ def validate_status_transition(
         return
 
     raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         detail=(
             "Invalid status transition "
             f"from {current_status.value} to {new_status.value}"

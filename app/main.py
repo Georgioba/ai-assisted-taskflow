@@ -5,7 +5,6 @@ from typing import List, Optional
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -15,15 +14,8 @@ from app.models import TaskCreate, TaskUpdate, TaskPriority, TaskStatus
 
 app = FastAPI(title="Task Tracker API")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-static_dir = Path(__file__).resolve().parent / "static"
+frontend_dir = Path(__file__).resolve().parents[1] / "frontend"
+static_dir = frontend_dir
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 class Task(BaseModel):
@@ -50,6 +42,11 @@ def compute_overdue(status: TaskStatus, due_date: Optional[date]) -> bool:
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend() -> HTMLResponse:
     return HTMLResponse(static_dir.joinpath("index.html").read_text(encoding="utf-8"))
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
 
 @app.get("/api/tasks", response_model=List[Task])
 def list_tasks(
